@@ -1,0 +1,6 @@
+[submodule "thirdparty/cross-compiler/gcc"]
+	path = thirdparty/cross-compiler/gcc
+	url = git://gcc.gnu.org/git/gcc.git
+[submodule "thirdparty/cross-compiler/binutils"]
+	path = thirdparty/cross-compiler/binutils
+	url = git://sourceware.org/git/binutils-gdb.git
