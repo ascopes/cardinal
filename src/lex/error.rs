@@ -1,11 +1,11 @@
 use std::num::{ParseFloatError, ParseIntError};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum LexerError<'src> {
     UnknownToken(&'src str),
-    InvalidUnicodeCharacter(&'src [u8]),
-    IntParseError(ParseIntError),
-    FloatParseError(ParseFloatError),
+    InvalidUnicodeSequence(&'src [u8]),
+    IntParseError(String),
+    FloatParseError(String),
     UnclosedStringLiteral,
     UnclosedMultilineComment,
 }

@@ -1,9 +1,39 @@
+/// Type that holds details about a token that was lifted from a source file during
+/// lexical analysis.
+///
+/// Each token holds the raw content of the token and the details of the variant. The
+/// raw content of the token is a reference to a parsed slice within the original source
+/// file.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Token<'src> {
-    pub raw_content: &'src str,
-    pub kind: TokenKind,
+    /// Raw UTF-8 encoded contents of the token.
+    raw_content: &'src str,
+
+    /// Details about the kind of token.
+    kind: TokenKind,
 }
 
+impl<'src> Token<'src> {
+    #[inline(always)]
+    pub fn new(raw_content: &'src str, kind: TokenKind) -> Self {
+        Self { raw_content, kind }
+    }
+
+    #[inline(always)]
+    pub fn raw_content(&self) -> &'src str {
+        self.raw_content
+    }
+
+    #[inline(always)]
+    pub fn kind(&self) -> TokenKind {
+        self.kind
+    }
+}
+
+/// Describes the variant of a token.
+///
+/// Some simple opaque types can be included in this variant, but for the most part,
+/// it is down to a parser to actually parse the contents of the token.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum TokenKind {
     /* Special markers */
@@ -83,4 +113,23 @@ pub enum TokenKind {
 
     /* Other tokens */
     Semi,
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::lex::token::{Token, TokenKind};
+
+    #[test]
+    fn tokens_are_constructed_as_expected() {
+        // Given
+        let raw_content = "foobarbaz";
+        let kind = TokenKind::Ident;
+
+        // When
+        let token = Token::new(raw_content, kind);
+
+        // Then
+        assert_eq!(token.raw_content(), raw_content, "raw_content");
+        assert_eq!(token.kind(), kind, "kind");
+    }
 }
