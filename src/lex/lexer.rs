@@ -73,7 +73,7 @@ impl<'src> Lexer<'src> {
             },
             Some(b'/') => match self.peek(1) {
                 Some(b'/') => self.scan_single_line_comment(),
-                Some(b'*') => self.scan_multiline_comment(),
+                Some(b'*') => self.scan_multi_line_comment(),
                 Some(b'=') => self.advance_and_emit(start, 2, TokenKind::DivAssign),
                 _ => self.advance_and_emit(start, 1, TokenKind::Div),
             },
@@ -328,7 +328,7 @@ impl<'src> Lexer<'src> {
         self.emit(start, TokenKind::SingleLineComment)
     }
 
-    fn scan_multiline_comment(&mut self) -> LexerTokenResult<'src> {
+    fn scan_multi_line_comment(&mut self) -> LexerTokenResult<'src> {
         let start = self.offset;
 
         // Step over the '/*'
@@ -336,14 +336,13 @@ impl<'src> Lexer<'src> {
 
         loop {
             match self.peek(0) {
-                // Be pedantic and complain if we forget to close a multiline comment before EOF.
-                None => return self.emit_error(start, LexerError::UnclosedMultilineComment),
                 Some(b'*') if matches!(self.peek(1), Some(b'/')) => {
                     // Step over the '*/'
                     self.advance_n(2);
                     break;
                 }
-                _ => self.advance(),
+                Some(_) => self.advance(),
+                None => return self.emit_error(start, LexerError::UnclosedMultiLineComment),
             }
         }
 
@@ -596,7 +595,7 @@ mod tests {
 
     // We do not test for too-small values currently. Rust will implicitly translate them to 0 and
     // we cannot catch this easily right now.
-    #[test_case(  "1.0e",   LexerError::InvalidFloatLiteral ; "missing unsigned exponent value")]
+    #[test_case(  "1.0e",    LexerError::InvalidFloatLiteral ; "missing unsigned exponent value")]
     #[test_case( "1.0e+",    LexerError::InvalidFloatLiteral ; "missing positive signed exponent value")]
     #[test_case( "1.0e-",    LexerError::InvalidFloatLiteral ; "missing negative signed exponent value")]
     #[test_case("5e+309", LexerError::FloatLiteralIsInfinite ; "too big to fit in f64")]
@@ -614,6 +613,26 @@ mod tests {
         assert_eq!(error.span(), Span::new(0, input.len()), "error.span");
         assert!(
             matches!(error.value(), expected_error),
+            "error.value {:?}",
+            error.value()
+        );
+    }
+
+    #[test]
+    fn lexer_errors_on_unclosed_multi_line_comments_at_eof() {
+        // Given
+        let raw_input = b"/* foo";
+        let mut lexer = Lexer::new(raw_input);
+
+        // When
+        let error = lexer
+            .next_token()
+            .expect_err("expected error parsing token");
+
+        // Then
+        assert_eq!(error.span(), Span::new(0, raw_input.len()), "error.span");
+        assert!(
+            matches!(error.value(), LexerError::UnclosedMultiLineComment),
             "error.value {:?}",
             error.value()
         );
