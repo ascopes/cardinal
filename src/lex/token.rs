@@ -117,7 +117,7 @@ pub enum TokenKind {
 
 #[cfg(test)]
 mod tests {
-    use crate::lex::token::{Token, TokenKind};
+    use super::*;
 
     #[test]
     fn tokens_are_constructed_as_expected() {
