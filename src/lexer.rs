@@ -1,9 +1,7 @@
-use crate::lex::error::{LexerError, LexerResult};
-use crate::lex::token::{Token, TokenKind};
-use crate::span::{Span, Spanned};
+use crate::errors::{SyntaxError, SyntaxResult};
+use crate::spans::{Span, Spanned};
+use crate::tokens::{Token, TokenKind};
 use std::str::FromStr;
-
-type LexerTokenResult<'src> = LexerResult<'src, Spanned<Token<'src>>>;
 
 /// Basic lexer that parses a UTF-8 encoded source file provided as a byte array.
 ///
@@ -44,7 +42,7 @@ impl<'src> Lexer<'src> {
     }
 
     /// Get the next token.
-    pub fn next_token(&mut self) -> LexerTokenResult<'src> {
+    pub fn next_token(&mut self) -> SyntaxResult<Spanned<Token<'src>>> {
         self.skip_whitespace();
 
         let start = self.offset;
@@ -137,11 +135,11 @@ impl<'src> Lexer<'src> {
         }
     }
 
-    fn scan_eof(&self) -> LexerTokenResult<'src> {
+    fn scan_eof(&self) -> SyntaxResult<Spanned<Token<'src>>> {
         self.emit(self.offset, TokenKind::Eof)
     }
 
-    fn scan_ident(&mut self) -> LexerTokenResult<'src> {
+    fn scan_ident(&mut self) -> SyntaxResult<Spanned<Token<'src>>> {
         let start = self.offset;
         while let Some(byte) = self.peek(0)
             && (byte.is_ascii_alphanumeric() || byte == b'_')
@@ -167,7 +165,7 @@ impl<'src> Lexer<'src> {
         self.emit(start, kind)
     }
 
-    fn scan_num_lit(&mut self) -> LexerTokenResult<'src> {
+    fn scan_num_lit(&mut self) -> SyntaxResult<Spanned<Token<'src>>> {
         match self.peek(0) {
             Some(b'0') => match self.peek(1) {
                 Some(b'b' | b'B') => self.scan_bin_int_lit(),
@@ -179,7 +177,7 @@ impl<'src> Lexer<'src> {
         }
     }
 
-    fn scan_bin_int_lit(&mut self) -> LexerTokenResult<'src> {
+    fn scan_bin_int_lit(&mut self) -> SyntaxResult<Spanned<Token<'src>>> {
         let start = self.offset;
 
         // Advance over the 0b prefix.
@@ -193,7 +191,7 @@ impl<'src> Lexer<'src> {
         self.parse_int_lit(start, 2, text, 2)
     }
 
-    fn scan_oct_int_lit(&mut self) -> LexerTokenResult<'src> {
+    fn scan_oct_int_lit(&mut self) -> SyntaxResult<Spanned<Token<'src>>> {
         let start = self.offset;
 
         // Advance over the 0o prefix.
@@ -207,7 +205,7 @@ impl<'src> Lexer<'src> {
         self.parse_int_lit(start, 2, text, 8)
     }
 
-    fn scan_dec_num_lit(&mut self) -> LexerTokenResult<'src> {
+    fn scan_dec_num_lit(&mut self) -> SyntaxResult<Spanned<Token<'src>>> {
         enum DecState {
             Int,
             Frac,
@@ -252,7 +250,7 @@ impl<'src> Lexer<'src> {
         }
     }
 
-    fn scan_hex_int_lit(&mut self) -> LexerTokenResult<'src> {
+    fn scan_hex_int_lit(&mut self) -> SyntaxResult<Spanned<Token<'src>>> {
         let start = self.offset;
 
         // Advance over the 0x prefix.
@@ -272,22 +270,22 @@ impl<'src> Lexer<'src> {
         prefix_offset: usize,
         text: &'src str,
         radix: u32,
-    ) -> LexerTokenResult<'src> {
+    ) -> SyntaxResult<Spanned<Token<'src>>> {
         match u64::from_str_radix(&text[prefix_offset..], radix) {
             Ok(value) => self.emit(start, TokenKind::IntLit(value)),
-            Err(_) => self.emit_error(start, LexerError::InvalidIntLiteral),
+            Err(_) => self.emit_error(start, SyntaxError::InvalidIntLiteral),
         }
     }
 
-    fn parse_float_lit(&self, start: usize, text: &'src str) -> LexerTokenResult<'src> {
+    fn parse_float_lit(&self, start: usize, text: &'src str) -> SyntaxResult<Spanned<Token<'src>>> {
         match f64::from_str(text) {
             Ok(value) if value.is_finite() => self.emit(start, TokenKind::FloatLit(value)),
-            Ok(_) => self.emit_error(start, LexerError::FloatLiteralIsInfinite),
-            Err(_) => self.emit_error(start, LexerError::InvalidFloatLiteral),
+            Ok(_) => self.emit_error(start, SyntaxError::FloatLiteralIsInfinite),
+            Err(_) => self.emit_error(start, SyntaxError::InvalidFloatLiteral),
         }
     }
 
-    fn scan_str_lit(&mut self) -> LexerTokenResult<'src> {
+    fn scan_str_lit(&mut self) -> SyntaxResult<Spanned<Token<'src>>> {
         let start = self.offset;
 
         // Advance over the opening quote.
@@ -299,7 +297,7 @@ impl<'src> Lexer<'src> {
         loop {
             match self.peek(0) {
                 Some(b'\r' | b'\n') | None => {
-                    return self.emit_error(start, LexerError::UnclosedStringLiteral);
+                    return self.emit_error(start, SyntaxError::UnclosedStringLiteral);
                 }
                 // Step over any occurrence of '\"' within a string.
                 Some(b'\\') if matches!(self.peek(1), Some(b'"')) => self.advance_n(2),
@@ -315,7 +313,7 @@ impl<'src> Lexer<'src> {
         self.emit(start, TokenKind::StrLit)
     }
 
-    fn scan_single_line_comment(&mut self) -> LexerTokenResult<'src> {
+    fn scan_single_line_comment(&mut self) -> SyntaxResult<Spanned<Token<'src>>> {
         let start = self.offset;
 
         // Step over the '//'
@@ -328,7 +326,7 @@ impl<'src> Lexer<'src> {
         self.emit(start, TokenKind::SingleLineComment)
     }
 
-    fn scan_multi_line_comment(&mut self) -> LexerTokenResult<'src> {
+    fn scan_multi_line_comment(&mut self) -> SyntaxResult<Spanned<Token<'src>>> {
         let start = self.offset;
 
         // Step over the '/*'
@@ -342,14 +340,14 @@ impl<'src> Lexer<'src> {
                     break;
                 }
                 Some(_) => self.advance(),
-                None => return self.emit_error(start, LexerError::UnclosedMultiLineComment),
+                None => return self.emit_error(start, SyntaxError::UnclosedMultiLineComment),
             }
         }
 
         self.emit(start, TokenKind::MultiLineComment)
     }
 
-    fn scan_unknown_token(&mut self) -> LexerTokenResult<'src> {
+    fn scan_unknown_token(&mut self) -> SyntaxResult<Spanned<Token<'src>>> {
         let start = self.offset;
         self.advance();
 
@@ -366,9 +364,14 @@ impl<'src> Lexer<'src> {
             }
         }
 
-        let invalid_text = self.slice_to_str(start, self.offset)?;
+        let unknown_content = self.slice_to_str(start, self.offset)?;
 
-        self.emit_error(start, LexerError::UnknownToken(invalid_text))
+        self.emit_error(
+            start,
+            SyntaxError::UnknownToken {
+                unknown_content: Box::from(unknown_content),
+            },
+        )
     }
 
     #[inline(always)]
@@ -395,15 +398,20 @@ impl<'src> Lexer<'src> {
         }
     }
 
-    fn slice_to_str(&self, start: usize, end: usize) -> LexerResult<'src, &'src str> {
+    fn slice_to_str(&self, start: usize, end: usize) -> SyntaxResult<&'src str> {
         let raw = &self.src[start..end];
         match str::from_utf8(raw) {
             Ok(value) => Ok(value),
-            Err(_) => self.emit_error(start, LexerError::InvalidUnicodeSequence(raw)),
+            Err(_) => self.emit_error(
+                start,
+                SyntaxError::InvalidUnicodeSequence {
+                    invalid_content: Box::from(raw),
+                },
+            ),
         }
     }
 
-    fn emit(&self, start: usize, kind: TokenKind) -> LexerTokenResult<'src> {
+    fn emit(&self, start: usize, kind: TokenKind) -> SyntaxResult<Spanned<Token<'src>>> {
         let raw_content = self.slice_to_str(start, self.offset)?;
 
         Ok(Spanned::new(
@@ -418,12 +426,12 @@ impl<'src> Lexer<'src> {
         start: usize,
         len: usize,
         kind: TokenKind,
-    ) -> LexerTokenResult<'src> {
+    ) -> SyntaxResult<Spanned<Token<'src>>> {
         self.advance_n(len);
         self.emit(start, kind)
     }
 
-    fn emit_error<R>(&self, start: usize, error: LexerError<'src>) -> LexerResult<'src, R> {
+    fn emit_error<R>(&self, start: usize, error: SyntaxError) -> SyntaxResult<R> {
         Err(Spanned::new(error, Span::new(start, self.offset)))
     }
 }
@@ -587,7 +595,7 @@ mod tests {
         // Then
         assert_eq!(error.span(), Span::new(0, expected_length), "error.span");
         assert!(
-            matches!(error.value(), LexerError::InvalidIntLiteral),
+            matches!(error.value(), SyntaxError::InvalidIntLiteral),
             "error.value {:?}",
             error.value()
         );
@@ -595,11 +603,11 @@ mod tests {
 
     // We do not test for too-small values currently. Rust will implicitly translate them to 0 and
     // we cannot catch this easily right now.
-    #[test_case(  "1.0e",    LexerError::InvalidFloatLiteral ; "missing unsigned exponent value")]
-    #[test_case( "1.0e+",    LexerError::InvalidFloatLiteral ; "missing positive signed exponent value")]
-    #[test_case( "1.0e-",    LexerError::InvalidFloatLiteral ; "missing negative signed exponent value")]
-    #[test_case("5e+309", LexerError::FloatLiteralIsInfinite ; "too big to fit in f64")]
-    fn lexer_errors_on_invalid_floats(input: &str, expected_error: LexerError) {
+    #[test_case(  "1.0e",    SyntaxError::InvalidFloatLiteral ; "missing unsigned exponent value")]
+    #[test_case( "1.0e+",    SyntaxError::InvalidFloatLiteral ; "missing positive signed exponent value")]
+    #[test_case( "1.0e-",    SyntaxError::InvalidFloatLiteral ; "missing negative signed exponent value")]
+    #[test_case("5e+309", SyntaxError::FloatLiteralIsInfinite ; "too big to fit in f64")]
+    fn lexer_errors_on_invalid_floats(input: &str, expected_error: SyntaxError) {
         // Given
         let raw_input = input.as_bytes();
         let mut lexer = Lexer::new(raw_input);
@@ -633,7 +641,7 @@ mod tests {
         // Then
         assert_eq!(error.span(), Span::new(0, raw_input.len()), "error.span");
         assert!(
-            matches!(error.value(), LexerError::UnclosedMultiLineComment),
+            matches!(error.value(), SyntaxError::UnclosedMultiLineComment),
             "error.value {:?}",
             error.value()
         );
@@ -653,7 +661,7 @@ mod tests {
         // Then
         assert_eq!(error.span(), Span::new(0, raw_input.len()), "error.span");
         assert!(
-            matches!(error.value(), LexerError::UnclosedStringLiteral),
+            matches!(error.value(), SyntaxError::UnclosedStringLiteral),
             "error.value {:?}",
             error.value()
         );
@@ -676,7 +684,7 @@ mod tests {
         // Then
         assert_eq!(error.span(), Span::new(0, 7), "error.span");
         assert!(
-            matches!(error.value(), LexerError::UnclosedStringLiteral),
+            matches!(error.value(), SyntaxError::UnclosedStringLiteral),
             "error.value {:?}",
             error.value()
         );
@@ -717,7 +725,9 @@ mod tests {
         assert_eq!(error.span(), Span::new(3, 7), "error.span");
         assert_eq!(
             error.value(),
-            &LexerError::UnknownToken("$foo"),
+            &SyntaxError::UnknownToken {
+                unknown_content: Box::from("$foo")
+            },
             "error.value"
         );
         assert_eq!(token2.span(), Span::new(8, 10), "token2.span");
@@ -764,7 +774,9 @@ mod tests {
         assert_eq!(error.span(), Span::new(6, 11), "error.span");
         assert_eq!(
             error.value(),
-            &LexerError::InvalidUnicodeSequence(b"\xff\x0fbar"),
+            &SyntaxError::InvalidUnicodeSequence {
+                invalid_content: Box::from(b"\xff\x0fbar".as_slice())
+            },
             "error.value"
         );
         assert_eq!(token3.span(), Span::new(12, 14), "token3.span");
