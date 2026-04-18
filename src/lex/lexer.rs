@@ -611,8 +611,9 @@ mod tests {
 
         // Then
         assert_eq!(error.span(), Span::new(0, input.len()), "error.span");
-        assert!(
-            matches!(error.value(), expected_error),
+        assert_eq!(
+            error.value(),
+            &expected_error,
             "error.value {:?}",
             error.value()
         );
