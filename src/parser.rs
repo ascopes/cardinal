@@ -28,7 +28,7 @@ impl<'src> Parser<'src> {
     }
 
     #[inline(always)]
-    fn peek(&self) -> &SyntaxResult<Spanned<Token>> {
+    fn peek(&self) -> &SyntaxResult<Spanned<Token<'src>>> {
         &self.current_token
     }
 
@@ -40,7 +40,9 @@ impl<'src> Parser<'src> {
         match &self.current_token {
             Ok(token) => {
                 if token.value().kind() == expected_kind {
-                    Ok(token.clone())
+                    let cloned_token = token.clone();
+                    self.advance();
+                    Ok(cloned_token)
                 } else {
                     Err(Spanned::new(
                         SyntaxError::UnexpectedToken {
@@ -50,7 +52,6 @@ impl<'src> Parser<'src> {
                     ))
                 }
             }
-
             Err(err) => Err(err.clone()),
         }
     }
