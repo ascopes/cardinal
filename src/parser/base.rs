@@ -1,6 +1,6 @@
 use crate::errors::{SyntaxError, SyntaxResult};
 use crate::lexer::Lexer;
-use crate::spans::Spanned;
+use crate::spans::{Span, Spanned};
 use crate::tokens::{Token, TokenKind};
 
 /// Parses the outputs of a lexer into an abstract syntax tree.
@@ -23,19 +23,18 @@ impl<'src> Parser<'src> {
     }
 
     #[inline(always)]
-    fn advance(&mut self) {
+    pub(crate) fn advance(&mut self) {
         self.current_token = self.lexer.next_token();
     }
 
     #[inline(always)]
-    fn peek(&self) -> &SyntaxResult<Spanned<Token<'src>>> {
+    pub(crate) fn peek(&self) -> &SyntaxResult<Spanned<Token<'src>>> {
         &self.current_token
     }
 
-    fn eat(
+    pub(crate) fn eat(
         &'src mut self,
         expected_kind: TokenKind,
-        error_message: &str,
     ) -> SyntaxResult<Spanned<Token<'src>>> {
         match &self.current_token {
             Ok(token) => {
@@ -44,9 +43,15 @@ impl<'src> Parser<'src> {
                     self.advance();
                     Ok(cloned_token)
                 } else {
+                    let message = format!(
+                        "expected token of type {:?} but got {:?}",
+                        expected_kind,
+                        token.value().kind()
+                    );
+
                     Err(Spanned::new(
                         SyntaxError::UnexpectedToken {
-                            message: Box::from(error_message),
+                            message: message.into_boxed_str(),
                         },
                         token.span(),
                     ))
