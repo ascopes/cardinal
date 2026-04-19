@@ -1,12 +1,13 @@
-use crate::errors::{SyntaxError, SyntaxResult};
+use crate::ast::expr::Expr;
+use crate::errors::SyntaxError;
 use crate::lexer::Lexer;
-use crate::spans::{Span, Spanned};
+use crate::spans::Spanned;
 use crate::tokens::{Token, TokenKind};
 
 /// Parses the outputs of a lexer into an abstract syntax tree.
 pub struct Parser<'src> {
     lexer: Lexer<'src>,
-    current_token: SyntaxResult<Spanned<Token<'src>>>,
+    current_token: Result<Spanned<Token<'src>>, Spanned<SyntaxError>>,
 }
 
 impl<'src> Parser<'src> {
@@ -18,24 +19,27 @@ impl<'src> Parser<'src> {
         }
     }
 
-    pub fn parse(&mut self) -> SyntaxResult<Spanned<()>> {
-        todo!();
+    pub fn parse(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
+        self.parse_expr()
     }
 
     #[inline(always)]
-    pub(crate) fn advance(&mut self) {
+    pub(super) fn advance(&mut self) {
         self.current_token = self.lexer.next_token();
     }
 
+    // Mutability: this is always immutable in theory, but most operations require a mutable
+    // borrow around the context of using this, so we keep it as a mutable borrow to keep the
+    // borrow-checker happy.
     #[inline(always)]
-    pub(crate) fn peek(&self) -> &SyntaxResult<Spanned<Token<'src>>> {
-        &self.current_token
+    pub(super) fn peek(&mut self) -> Result<Spanned<Token<'src>>, Spanned<SyntaxError>> {
+        self.current_token.clone()
     }
 
-    pub(crate) fn eat(
-        &'src mut self,
+    pub(super) fn eat(
+        &mut self,
         expected_kind: TokenKind,
-    ) -> SyntaxResult<Spanned<Token<'src>>> {
+    ) -> Result<Spanned<Token<'src>>, Spanned<SyntaxError>> {
         match &self.current_token {
             Ok(token) => {
                 if token.value().kind() == expected_kind {

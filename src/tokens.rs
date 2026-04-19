@@ -113,6 +113,8 @@ pub enum TokenKind {
 
     /* Other tokens */
     Semi,
+    Period,
+    Comma,
 }
 
 #[cfg(test)]

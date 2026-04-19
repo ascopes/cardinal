@@ -1,7 +1,4 @@
-use crate::spans::Spanned;
 use std::fmt;
-
-pub type SyntaxResult<T> = Result<T, Spanned<SyntaxError>>;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum SyntaxError {
