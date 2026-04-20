@@ -1,9 +1,15 @@
-[package]
-name = "cardinal"
-version = "0.1.0"
+[workspace]
+members = [
+    "cardinal_parser",
+]
+resolver = "3"
+
+[workspace.dependencies]
+test-case = "3.3.1"   # Parameterized tests
+
+[workspace.package]
+authors = ["Ashley Scopes <73482956+ascopes@users.noreply.github.com>"]
 edition = "2024"
-
-[dependencies]
-
-[dev-dependencies]
-test-case = "3.3.1"
+license = "Apache-2.0"
+repository = "https://github.com/ascopes/cardinal"
+version = "0.0.1"
