@@ -1,13 +1,15 @@
 use crate::ast::expr::Expr;
 use crate::errors::SyntaxError;
-use crate::lexer::Lexer;
+use crate::lexer::{Lexer, LexerResult};
 use crate::spans::Spanned;
 use crate::tokens::{Token, TokenKind};
+
+pub type ParserResult<T> = Result<Spanned<T>, Spanned<SyntaxError>>;
 
 /// Parses the outputs of a lexer into an abstract syntax tree.
 pub struct Parser<'src> {
     lexer: Lexer<'src>,
-    current_token: Result<Spanned<Token<'src>>, Spanned<SyntaxError>>,
+    current_token: LexerResult<'src>,
 }
 
 impl<'src> Parser<'src> {
@@ -19,7 +21,7 @@ impl<'src> Parser<'src> {
         }
     }
 
-    pub fn parse(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
+    pub fn parse(&mut self) -> ParserResult<Expr> {
         self.parse_expr()
     }
 
@@ -32,14 +34,11 @@ impl<'src> Parser<'src> {
     // borrow around the context of using this, so we keep it as a mutable borrow to keep the
     // borrow-checker happy.
     #[inline(always)]
-    pub(super) fn peek(&mut self) -> Result<Spanned<Token<'src>>, Spanned<SyntaxError>> {
+    pub(super) fn peek(&mut self) -> LexerResult<'src> {
         self.current_token.clone()
     }
 
-    pub(super) fn eat(
-        &mut self,
-        expected_kind: TokenKind,
-    ) -> Result<Spanned<Token<'src>>, Spanned<SyntaxError>> {
+    pub(super) fn eat(&mut self, expected_kind: TokenKind) -> LexerResult<'src> {
         match &self.current_token {
             Ok(token) => {
                 if token.value().kind() == expected_kind {

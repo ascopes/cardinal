@@ -3,7 +3,7 @@ use crate::spans::{Span, Spanned};
 use crate::tokens::{Token, TokenKind};
 use std::str::FromStr;
 
-type LexerResult<'src> = Result<Spanned<Token<'src>>, Spanned<SyntaxError>>;
+pub type LexerResult<'src> = Result<Spanned<Token<'src>>, Spanned<SyntaxError>>;
 
 /// Basic lexer that parses a UTF-8 encoded source file provided as a byte array.
 ///

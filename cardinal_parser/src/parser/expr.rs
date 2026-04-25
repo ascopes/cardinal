@@ -1,6 +1,6 @@
 use crate::ast::expr::*;
 use crate::errors::SyntaxError;
-use crate::parser::base::Parser;
+use crate::parser::base::{Parser, ParserResult};
 use crate::spans::{Span, Spanned};
 use crate::tokens::{Token, TokenKind};
 
@@ -11,7 +11,7 @@ impl<'src> Parser<'src> {
     ///
     /// This is an alias to the top-level production when parsing expressions.
     #[inline]
-    pub(super) fn parse_expr(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
+    pub(super) fn parse_expr(&mut self) -> ParserResult<Expr> {
         self.parse_assign_expr()
     }
 
@@ -31,7 +31,7 @@ impl<'src> Parser<'src> {
     ///             | bool_or_expr
     ///             ;
     /// ```
-    fn parse_assign_expr(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
+    fn parse_assign_expr(&mut self) -> ParserResult<Expr> {
         let left = self.parse_bool_or_expr()?;
 
         let op = match self.peek()?.value().kind() {
@@ -68,7 +68,7 @@ impl<'src> Parser<'src> {
     ///              | bool_and_expr
     ///              ;
     /// ```
-    fn parse_bool_or_expr(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
+    fn parse_bool_or_expr(&mut self) -> ParserResult<Expr> {
         self.parse_binary_op_left_assoc(
             |token| match token.kind() {
                 TokenKind::BoolOr => Some(BinaryOp::BoolOr),
@@ -83,7 +83,7 @@ impl<'src> Parser<'src> {
     ///               | eq_expr
     ///               ;
     /// ```
-    fn parse_bool_and_expr(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
+    fn parse_bool_and_expr(&mut self) -> ParserResult<Expr> {
         self.parse_binary_op_left_assoc(
             |token| match token.kind() {
                 TokenKind::BoolAnd => Some(BinaryOp::BoolAnd),
@@ -99,7 +99,7 @@ impl<'src> Parser<'src> {
     ///         | comp_expr
     ///         ;
     /// ```
-    fn parse_eq_expr(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
+    fn parse_eq_expr(&mut self) -> ParserResult<Expr> {
         self.parse_binary_op_left_assoc(
             |token| match token.kind() {
                 TokenKind::Eq => Some(BinaryOp::Eq),
@@ -118,7 +118,7 @@ impl<'src> Parser<'src> {
     ///           | bitshift_expr
     ///           ;
     /// ```
-    fn parse_comp_expr(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
+    fn parse_comp_expr(&mut self) -> ParserResult<Expr> {
         self.parse_binary_op_left_assoc(
             |token| match token.kind() {
                 TokenKind::Lt => Some(BinaryOp::Lt),
@@ -137,7 +137,7 @@ impl<'src> Parser<'src> {
     ///               | sum_expr
     ///               ;
     /// ```
-    fn parse_bitshift_expr(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
+    fn parse_bitshift_expr(&mut self) -> ParserResult<Expr> {
         self.parse_binary_op_left_assoc(
             |token| match token.kind() {
                 TokenKind::BitShl => Some(BinaryOp::BitShl),
@@ -154,7 +154,7 @@ impl<'src> Parser<'src> {
     ///          | factor_expr
     ///          ;
     /// ```
-    fn parse_sum_expr(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
+    fn parse_sum_expr(&mut self) -> ParserResult<Expr> {
         self.parse_binary_op_left_assoc(
             |token| match token.kind() {
                 TokenKind::Add => Some(BinaryOp::Add),
@@ -171,7 +171,7 @@ impl<'src> Parser<'src> {
     ///             | unary_expr
     ///             ;
     /// ```
-    fn parse_factor_expr(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
+    fn parse_factor_expr(&mut self) -> ParserResult<Expr> {
         self.parse_binary_op_left_assoc(
             |token| match token.kind() {
                 TokenKind::Mul => Some(BinaryOp::Mul),
@@ -191,7 +191,7 @@ impl<'src> Parser<'src> {
     ///            | pow_expr
     ///            ;
     /// ```
-    fn parse_unary_expr(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
+    fn parse_unary_expr(&mut self) -> ParserResult<Expr> {
         let first = self.peek()?;
         let op = match first.value().kind() {
             TokenKind::Add => UnaryOp::Plus,
@@ -216,7 +216,7 @@ impl<'src> Parser<'src> {
     ///          | primary_expr
     ///          ;
     /// ```
-    fn parse_pow_expr(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
+    fn parse_pow_expr(&mut self) -> ParserResult<Expr> {
         let left = self.parse_primary_expr()?;
 
         let op = match self.peek()?.value().kind() {
@@ -243,7 +243,7 @@ impl<'src> Parser<'src> {
     /// primary_expr = atom , ( member_access_expr | index_expr | func_call_expr )*
     ///              ;
     /// ```
-    fn parse_primary_expr(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
+    fn parse_primary_expr(&mut self) -> ParserResult<Expr> {
         let mut expr = self.parse_atom()?;
 
         // Consume chained calls and selectors
@@ -262,10 +262,7 @@ impl<'src> Parser<'src> {
     /// ```text
     /// member_access_expr = PERIOD , ident ;
     /// ```
-    fn parse_member_access_expr(
-        &mut self,
-        owner: Spanned<Expr>,
-    ) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
+    fn parse_member_access_expr(&mut self, owner: Spanned<Expr>) -> ParserResult<Expr> {
         debug_assert_eq!(self.peek()?.value().kind(), TokenKind::Period);
 
         self.advance();
@@ -280,10 +277,7 @@ impl<'src> Parser<'src> {
     /// ```text
     /// index_expr = LEFT_BRACKET , expr , RIGHT_BRACKET ;
     /// ```
-    fn parse_index_expr(
-        &mut self,
-        owner: Spanned<Expr>,
-    ) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
+    fn parse_index_expr(&mut self, owner: Spanned<Expr>) -> ParserResult<Expr> {
         debug_assert_eq!(self.peek()?.value().kind(), TokenKind::LeftBracket);
 
         self.advance();
@@ -300,10 +294,7 @@ impl<'src> Parser<'src> {
     /// func_call_expr = LEFT_PAREN , arg_list , RIGHT_PAREN ;
     /// arg_list       = expr , ( COMMA , expr )* , COMMA? ;
     /// ```
-    fn parse_func_call_expr(
-        &mut self,
-        name: Spanned<Expr>,
-    ) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
+    fn parse_func_call_expr(&mut self, name: Spanned<Expr>) -> ParserResult<Expr> {
         debug_assert_eq!(self.peek()?.value().kind(), TokenKind::LeftParen);
 
         let left_paren_span = self.eat(TokenKind::LeftParen)?.span();
@@ -347,7 +338,7 @@ impl<'src> Parser<'src> {
     ///      | STR_LIT
     ///      ;
     /// ```
-    fn parse_atom(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
+    fn parse_atom(&mut self) -> ParserResult<Expr> {
         let first = self.peek()?;
 
         match first.value().kind() {
@@ -411,10 +402,10 @@ impl<'src> Parser<'src> {
         &mut self,
         op_fn: OpFn,
         parser_fn: ParserFn,
-    ) -> Result<Spanned<Expr>, Spanned<SyntaxError>>
+    ) -> ParserResult<Expr>
     where
         OpFn: Fn(Token) -> Option<BinaryOp>,
-        ParserFn: Fn(&mut Self) -> Result<Spanned<Expr>, Spanned<SyntaxError>>,
+        ParserFn: Fn(&mut Self) -> ParserResult<Expr>,
     {
         let mut root = parser_fn(self)?;
 

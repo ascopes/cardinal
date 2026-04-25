@@ -1,6 +1,6 @@
 use crate::ast::ident::{Ident, QualIdent, SimpleIdent};
 use crate::errors::SyntaxError;
-use crate::parser::base::Parser;
+use crate::parser::base::{Parser, ParserResult};
 use crate::spans::{Span, Spanned};
 use crate::tokens::TokenKind;
 
@@ -10,7 +10,7 @@ impl<'src> Parser<'src> {
     ///       | IDENT
     ///       ;
     /// ```
-    pub(super) fn parse_ident(&mut self) -> Result<Spanned<Ident>, Spanned<SyntaxError>> {
+    pub(super) fn parse_ident(&mut self) -> ParserResult<Ident> {
         let mut token = self.eat(TokenKind::Ident)?;
 
         if self.peek()?.value().kind() != TokenKind::NamespaceSep {
