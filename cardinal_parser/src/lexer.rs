@@ -129,6 +129,9 @@ impl<'src> Lexer<'src> {
             Some(b';') => self.advance_and_emit(start, 1, TokenKind::Semi),
             Some(b'.') => self.advance_and_emit(start, 1, TokenKind::Period),
             Some(b',') => self.advance_and_emit(start, 1, TokenKind::Comma),
+            Some(b':') if matches!(self.peek(1), Some(b':')) => {
+                self.advance_and_emit(start, 2, TokenKind::NamespaceSep)
+            }
             _ => self.scan_unknown_token(),
         }
     }
@@ -540,6 +543,7 @@ mod tests {
     #[test_case(                                         ";",                    TokenKind::Semi ; "semicolon")]
     #[test_case(                                         ".",                  TokenKind::Period ; "period")]
     #[test_case(                                         ",",                   TokenKind::Comma ; "comma")]
+    #[test_case(                                        "::",            TokenKind::NamespaceSep ; "namespace separator")]
     fn tokens_are_scanned_as_expected(input: &str, expected_kind: TokenKind) {
         // Given
         let raw_input = input.as_bytes();

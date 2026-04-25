@@ -64,4 +64,9 @@ impl<'src> Parser<'src> {
             Err(err) => Err(err.clone()),
         }
     }
+
+    #[inline(always)]
+    pub(super) fn extract_boxed_str(&self, token: Token) -> Box<str> {
+        token.raw_content().to_string().into_boxed_str()
+    }
 }

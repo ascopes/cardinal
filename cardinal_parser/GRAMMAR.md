@@ -5,25 +5,25 @@ syntax in the Cardinal programming language.
 
 ## Notation
 
-This document uses a dialect based upon Extended Backus-Naurr Form (EBNF) productions to represent
-the syntatic structure of tbe language.
+This document uses a dialect based upon Extended Backus-Naur Form (EBNF) productions to represent
+the syntactic structure of tbe language.
 
-| Symbol      | Name          | Description                                                                  |
+|   Symbol    | Name          | Description                                                                  |
 |:-----------:|:--------------|:-----------------------------------------------------------------------------|
-| `rule`      | rule          | References a rule.                                                           |
-| `=`         | definition    | Denotes the start of a rule definition.                                      |
-| `;`         | termination   | Denotes the end of a rule definition.                                        |
-| `,`         | concatenation | Denotes that one rule must be followed by another rule (i.e. a logical AND). |
-| `|`         | alternation   | Denotes that one rule can be replaced with another (i.e. a logical OR).      |
-| `rule?`     | optionality   | The annotated rule may occur 0 or 1 times.                                   |
-| `rule*`     | repetition    | The annotated rule may occur 0 or more times.                                |
-| `rule+`     | repetition    | The annotated rule may occur 1 or more times.                                |
-| `( ... )`   | grouping      | Groups multiple elements within parenthesis.                                 |
-| `'blah'`    | terminal      | The literal content in quotes.                                               |
-| `"blah"`    | terminal      | The literal content in quotes.                                               |
-| `0x2a`      | byte terminal | The literal byte value as a character. Represented in hexadecimal.           |
+|   `rule`    | rule          | References a rule.                                                           |
+|     `=`     | definition    | Denotes the start of a rule definition.                                      |
+|     `;`     | termination   | Denotes the end of a rule definition.                                        |
+|     `,`     | concatenation | Denotes that one rule must be followed by another rule (i.e. a logical AND). |
+|    `\|`     | alternation   | Denotes that one rule can be replaced with another (i.e. a logical OR).      |
+|   `rule?`   | optionality   | The annotated rule may occur 0 or 1 times.                                   |
+|   `rule*`   | repetition    | The annotated rule may occur 0 or more times.                                |
+|   `rule+`   | repetition    | The annotated rule may occur 1 or more times.                                |
+|  `( ... )`  | grouping      | Groups multiple elements within parenthesis.                                 |
+|  `'blah'`   | terminal      | The literal content in quotes.                                               |
+|  `"blah"`   | terminal      | The literal content in quotes.                                               |
+|   `0x2a`    | byte terminal | The literal byte value as a character. Represented in hexadecimal.           |
 | `(* ... *)` | comment       | No meaning other than existing for documentation purposes.                   |
-| `? ... ?`   | special       | A special sequence that has a description between the question marks.        |
+|  `? ... ?`  | special       | A special sequence that has a description between the question marks.        |
 
 ## Lexical grammar
 
@@ -82,8 +82,6 @@ The language defines the following tokens:
 ```
 (* keywords *)
 
-TRUE     = 'true' ;
-FALSE    = 'false' ;
 FN       = 'fn' ;
 LET      = 'let' ;
 IF       = 'if' ;
@@ -150,9 +148,15 @@ RIGHT_BRACE   = '}' ;
 
 (* other symbols *)
 
-SEMI   = ';' ;
-PERIOD = '.' ;
-COMMA  = ',' ;
+SEMI          = ';' ;
+PERIOD        = '.' ;
+COMMA         = ',' ;
+NAMESPACE_SEP = '::' ;
+
+
+(* boolean literals *)
+
+BOOL_LIT = 'true' | 'false' ;
 
 
 (* int literals *)
@@ -183,4 +187,101 @@ _STR_CHR = ? any UTF-8 codepoint except 0xa linefeed \n and 0xd carriage return 
 (* identifiers *)
 
 IDENT = ( _ALPHA | '_' ) , ( _ALNUM | '_' )* ;
+```
+
+## Structural Grammar
+
+The following grammar is implemented by a parser, consuming tokens emitted by the lexical layer.
+
+### Identifiers
+
+```
+ident = IDENT , ( NAMESPACE_SEP , IDENT )+
+      | IDENT
+      ;
+```
+
+### Expressions
+
+```
+expr = assign_expr ;
+
+assign_expr = bool_or_expr , ASSIGN , assign_expr
+            | bool_or_expr , ADD_ASSIGN , assign_expr
+            | bool_or_expr , SUB_ASSIGN , assign_expr
+            | bool_or_expr , MUL_ASSIGN , assign_expr
+            | bool_or_expr , DIV_ASSIGN , assign_expr
+            | bool_or_expr , MOD_ASSIGN , assign_expr
+            | bool_or_expr , POW_ASSIGN , assign_expr
+            | bool_or_expr , BIT_AND_ASSIGN , assign_expr
+            | bool_or_expr , BIT_OR_ASSIGN , assign_expr
+            | bool_or_expr , BIT_XOR_ASSIGN , assign_expr
+            | bool_or_expr , BIT_SHL_ASSIGN , assign_expr
+            | bool_or_expr , BIT_SHR_ASSIGN , assign_expr
+            | bool_or_expr
+            ;
+              
+bool_or_expr = bool_and_expr , BIT_OR , bool_or_expr
+              | bool_and_expr
+              ;
+               
+bool_and_expr = eq_expr , BIT_AND , bool_and_expr
+              | eq_expr
+              ;
+                
+eq_expr = comp_expr , EQ , eq_expr
+        | comp_expr , NEQ , eq_expr
+        | comp_expr
+        ;
+          
+comp_expr = bitshift_expr , LT , comp_expr
+          | bitshift_expr , LTEQ , comp_expr
+          | bitshift_expr , GT , comp_expr
+          | bitshift_expr , GTEQ , comp_expr
+          | bitshift_expr
+          ;
+            
+bitshift_expr = sum_expr , BIT_SHL , bitshift_expr
+              | sum_expr , BIT_SHR , bitshift_expr
+              | sum_expr
+              ;
+                
+sum_expr = factor_expr , ADD , sum_expr
+         | factor_expr , SUB , sum_expr
+         | factor_expr
+         ;
+           
+factor_expr = unary_expr , MUL , factor_expr
+            | unary_expr , SUB , factor_expr
+            | unary_expr
+            ;
+              
+unary_expr = ADD , unary_expr
+           | SUB , unary_expr
+           | BIT_NOT , unary_expr
+           | BOOL_NOT , unary_expr
+           | pow_expr
+           ;
+             
+pow_expr = pow_expr , POW , primary_expr
+         | primary_expr
+         ;
+
+primary_expr = atom , ( member_access_expr | index_expr | func_call_expr )*
+             ;
+
+member_access_expr = PERIOD , ident ;
+
+index_expr = LEFT_BRACKET , expr , RIGHT_BRACKET ;
+
+func_call_expr = LEFT_PAREN , arg_list , RIGHT_PAREN ;
+arg_list       = expr , ( COMMA , expr )* ;
+
+atom = LEFT_PAREN , expr , RIGHT_PAREN
+     | ident
+     | BOOL_LIT
+     | INT_LIT
+     | FLOAT_LIT
+     | STR_LIT
+     ;
 ```

@@ -115,6 +115,7 @@ pub enum TokenKind {
     Semi,
     Period,
     Comma,
+    NamespaceSep,
 }
 
 #[cfg(test)]

@@ -6,7 +6,7 @@ use crate::tokens::{Token, TokenKind};
 
 impl<'src> Parser<'src> {
     /// ```text
-    /// expr ::= assign_expr ;
+    /// expr = assign_expr ;
     /// ```
     ///
     /// This is an alias to the top-level production when parsing expressions.
@@ -16,20 +16,20 @@ impl<'src> Parser<'src> {
     }
 
     /// ```text
-    /// assign_expr ::= bool_or_expr , ASSIGN , assign_expr
-    ///               | bool_or_expr , ADD_ASSIGN , assign_expr
-    ///               | bool_or_expr , SUB_ASSIGN , assign_expr
-    ///               | bool_or_expr , MUL_ASSIGN , assign_expr
-    ///               | bool_or_expr , DIV_ASSIGN , assign_expr
-    ///               | bool_or_expr , MOD_ASSIGN , assign_expr
-    ///               | bool_or_expr , POW_ASSIGN , assign_expr
-    ///               | bool_or_expr , BIT_AND_ASSIGN , assign_expr
-    ///               | bool_or_expr , BIT_OR_ASSIGN , assign_expr
-    ///               | bool_or_expr , BIT_XOR_ASSIGN , assign_expr
-    ///               | bool_or_expr , BIT_SHL_ASSIGN , assign_expr
-    ///               | bool_or_expr , BIT_SHR_ASSIGN , assign_expr
-    ///               | bool_or_expr
-    ///               ;
+    /// assign_expr = bool_or_expr , ASSIGN , assign_expr
+    ///             | bool_or_expr , ADD_ASSIGN , assign_expr
+    ///             | bool_or_expr , SUB_ASSIGN , assign_expr
+    ///             | bool_or_expr , MUL_ASSIGN , assign_expr
+    ///             | bool_or_expr , DIV_ASSIGN , assign_expr
+    ///             | bool_or_expr , MOD_ASSIGN , assign_expr
+    ///             | bool_or_expr , POW_ASSIGN , assign_expr
+    ///             | bool_or_expr , BIT_AND_ASSIGN , assign_expr
+    ///             | bool_or_expr , BIT_OR_ASSIGN , assign_expr
+    ///             | bool_or_expr , BIT_XOR_ASSIGN , assign_expr
+    ///             | bool_or_expr , BIT_SHL_ASSIGN , assign_expr
+    ///             | bool_or_expr , BIT_SHR_ASSIGN , assign_expr
+    ///             | bool_or_expr
+    ///             ;
     /// ```
     fn parse_assign_expr(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
         let left = self.parse_bool_or_expr()?;
@@ -64,9 +64,9 @@ impl<'src> Parser<'src> {
     }
 
     /// ```text
-    /// bool_or_expr ::= bool_and_expr , BIT_OR , bool_or_expr
-    ///                | bool_and_expr
-    ///                ;
+    /// bool_or_expr = bool_and_expr , BIT_OR , bool_or_expr
+    ///              | bool_and_expr
+    ///              ;
     /// ```
     fn parse_bool_or_expr(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
         self.parse_binary_op_left_assoc(
@@ -79,9 +79,9 @@ impl<'src> Parser<'src> {
     }
 
     /// ```text
-    /// bool_and_expr ::= eq_expr , BIT_AND , bool_and_expr
-    ///                 | eq_expr
-    ///                 ;
+    /// bool_and_expr = eq_expr , BIT_AND , bool_and_expr
+    ///               | eq_expr
+    ///               ;
     /// ```
     fn parse_bool_and_expr(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
         self.parse_binary_op_left_assoc(
@@ -94,10 +94,10 @@ impl<'src> Parser<'src> {
     }
 
     /// ```text
-    /// eq_expr ::= comp_expr , EQ , eq_expr
-    ///           | comp_expr , NEQ , eq_expr
-    ///           | comp_expr
-    ///           ;
+    /// eq_expr = comp_expr , EQ , eq_expr
+    ///         | comp_expr , NEQ , eq_expr
+    ///         | comp_expr
+    ///         ;
     /// ```
     fn parse_eq_expr(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
         self.parse_binary_op_left_assoc(
@@ -111,12 +111,12 @@ impl<'src> Parser<'src> {
     }
 
     /// ```text
-    /// comp_expr ::= bitshift_expr , LT , comp_expr
-    ///             | bitshift_expr , LTEQ , comp_expr
-    ///             | bitshift_expr , GT , comp_expr
-    ///             | bitshift_expr , GTEQ , comp_expr
-    ///             | bitshift_expr
-    ///             ;
+    /// comp_expr = bitshift_expr , LT , comp_expr
+    ///           | bitshift_expr , LTEQ , comp_expr
+    ///           | bitshift_expr , GT , comp_expr
+    ///           | bitshift_expr , GTEQ , comp_expr
+    ///           | bitshift_expr
+    ///           ;
     /// ```
     fn parse_comp_expr(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
         self.parse_binary_op_left_assoc(
@@ -132,10 +132,10 @@ impl<'src> Parser<'src> {
     }
 
     /// ```text
-    /// bitshift_expr ::= sum_expr , BIT_SHL , bitshift_expr
-    ///                 | sum_expr , BIT_SHR , bitshift_expr
-    ///                 | sum_expr
-    ///                 ;
+    /// bitshift_expr = sum_expr , BIT_SHL , bitshift_expr
+    ///               | sum_expr , BIT_SHR , bitshift_expr
+    ///               | sum_expr
+    ///               ;
     /// ```
     fn parse_bitshift_expr(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
         self.parse_binary_op_left_assoc(
@@ -149,10 +149,10 @@ impl<'src> Parser<'src> {
     }
 
     /// ```text
-    /// sum_expr ::= factor_expr , ADD , sum_expr
-    ///            | factor_expr , SUB , sum_expr
-    ///            | factor_expr
-    ///            ;
+    /// sum_expr = factor_expr , ADD , sum_expr
+    ///          | factor_expr , SUB , sum_expr
+    ///          | factor_expr
+    ///          ;
     /// ```
     fn parse_sum_expr(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
         self.parse_binary_op_left_assoc(
@@ -166,10 +166,10 @@ impl<'src> Parser<'src> {
     }
 
     /// ```text
-    /// factor_expr ::= unary_expr , MUL , factor_expr
-    ///               | unary_expr , SUB , factor_expr
-    ///               | unary_expr
-    ///               ;
+    /// factor_expr = unary_expr , MUL , factor_expr
+    ///             | unary_expr , SUB , factor_expr
+    ///             | unary_expr
+    ///             ;
     /// ```
     fn parse_factor_expr(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
         self.parse_binary_op_left_assoc(
@@ -184,12 +184,12 @@ impl<'src> Parser<'src> {
     }
 
     /// ```text
-    /// unary_expr ::= ADD , unary_expr
-    ///              | SUB , unary_expr
-    ///              | BIT_NOT , unary_expr
-    ///              | BOOL_NOT , unary_expr
-    ///              | pow_expr
-    ///              ;
+    /// unary_expr = ADD , unary_expr
+    ///            | SUB , unary_expr
+    ///            | BIT_NOT , unary_expr
+    ///            | BOOL_NOT , unary_expr
+    ///            | pow_expr
+    ///            ;
     /// ```
     fn parse_unary_expr(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
         let first = self.peek()?;
@@ -212,9 +212,9 @@ impl<'src> Parser<'src> {
     }
 
     /// ```text
-    /// pow_expr ::= pow_expr , POW , primary_expr
-    ///            | primary_expr
-    ///            ;
+    /// pow_expr = pow_expr , POW , primary_expr
+    ///          | primary_expr
+    ///          ;
     /// ```
     fn parse_pow_expr(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
         let left = self.parse_primary_expr()?;
@@ -240,8 +240,8 @@ impl<'src> Parser<'src> {
     }
 
     /// ```text
-    /// primary_expr ::= atom , ( member_access_expr | index_expr | func_call_expr )*
-    ///                ;
+    /// primary_expr = atom , ( member_access_expr | index_expr | func_call_expr )*
+    ///              ;
     /// ```
     fn parse_primary_expr(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
         let mut expr = self.parse_atom()?;
@@ -260,7 +260,7 @@ impl<'src> Parser<'src> {
     }
 
     /// ```text
-    /// member_access_expr ::= PERIOD , ident ;
+    /// member_access_expr = PERIOD , ident ;
     /// ```
     fn parse_member_access_expr(
         &mut self,
@@ -278,7 +278,7 @@ impl<'src> Parser<'src> {
     }
 
     /// ```text
-    /// index_expr ::= LEFT_BRACKET , expr , RIGHT_BRACKET ;
+    /// index_expr = LEFT_BRACKET , expr , RIGHT_BRACKET ;
     /// ```
     fn parse_index_expr(
         &mut self,
@@ -297,8 +297,8 @@ impl<'src> Parser<'src> {
     }
 
     /// ```text
-    /// func_call_expr ::= LEFT_PAREN , arg_list , RIGHT_PAREN ;
-    /// arg_list       ::= expr , ( COMMA , expr )* ;
+    /// func_call_expr = LEFT_PAREN , arg_list , RIGHT_PAREN ;
+    /// arg_list       = expr , ( COMMA , expr )* ;
     /// ```
     fn parse_func_call_expr(
         &mut self,
@@ -333,6 +333,15 @@ impl<'src> Parser<'src> {
         ))
     }
 
+    /// ```text
+    /// atom = LEFT_PAREN , expr , RIGHT_PAREN
+    ///      | ident
+    ///      | BOOL_LIT
+    ///      | INT_LIT
+    ///      | FLOAT_LIT
+    ///      | STR_LIT
+    ///      ;
+    /// ```
     fn parse_atom(&mut self) -> Result<Spanned<Expr>, Spanned<SyntaxError>> {
         let first = self.peek()?;
 
@@ -343,7 +352,6 @@ impl<'src> Parser<'src> {
                 self.eat(TokenKind::RightParen)?;
                 Ok(expr)
             }
-            // TODO(ascopes): parse identifier paths here, i.e. foo::bar::baz
             TokenKind::Ident => {
                 let ident = self.parse_ident()?;
                 Ok(Spanned::new(
