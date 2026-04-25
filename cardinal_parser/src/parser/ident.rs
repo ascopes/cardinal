@@ -6,8 +6,8 @@ use crate::tokens::TokenKind;
 
 impl<'src> Parser<'src> {
     /// ```text
-    /// ident = IDENTIFIER , ( NAMESPACE_SEP , IDENTIFIER )+
-    ///       | IDENTIFIER
+    /// ident = IDENT , ( NAMESPACE_SEP , IDENT )+
+    ///       | IDENT
     ///       ;
     /// ```
     pub(super) fn parse_ident(&mut self) -> Result<Spanned<Ident>, Spanned<SyntaxError>> {

@@ -222,8 +222,8 @@ assign_expr = bool_or_expr , ASSIGN , assign_expr
             ;
               
 bool_or_expr = bool_and_expr , BIT_OR , bool_or_expr
-              | bool_and_expr
-              ;
+             | bool_and_expr
+             ;
                
 bool_and_expr = eq_expr , BIT_AND , bool_and_expr
               | eq_expr
