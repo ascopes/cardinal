@@ -275,7 +275,7 @@ member_access_expr = PERIOD , ident ;
 index_expr = LEFT_BRACKET , expr , RIGHT_BRACKET ;
 
 func_call_expr = LEFT_PAREN , arg_list , RIGHT_PAREN ;
-arg_list       = expr , ( COMMA , expr )* ;
+arg_list       = expr , ( COMMA , expr )* , COMMA? ;
 
 atom = LEFT_PAREN , expr , RIGHT_PAREN
      | ident

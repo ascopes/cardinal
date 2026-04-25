@@ -298,7 +298,7 @@ impl<'src> Parser<'src> {
 
     /// ```text
     /// func_call_expr = LEFT_PAREN , arg_list , RIGHT_PAREN ;
-    /// arg_list       = expr , ( COMMA , expr )* ;
+    /// arg_list       = expr , ( COMMA , expr )* , COMMA? ;
     /// ```
     fn parse_func_call_expr(
         &mut self,
@@ -315,6 +315,11 @@ impl<'src> Parser<'src> {
 
             if matches!(self.peek()?.value().kind(), TokenKind::Comma) {
                 self.advance();
+
+                // Allow trailing commas for beautification purposes.
+                if self.peek()?.value().kind() == TokenKind::RightParen {
+                    break;
+                }
             } else {
                 break;
             }
