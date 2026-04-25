@@ -1,6 +1,7 @@
 use crate::ast::expr::*;
 use crate::errors::SyntaxError;
 use crate::parser::base::{Parser, ParserResult};
+use crate::parser::strings::parse_str_lit;
 use crate::spans::{Span, Spanned};
 use crate::tokens::{Token, TokenKind};
 
@@ -376,10 +377,7 @@ impl<'src> Parser<'src> {
                     first.span(),
                 ))
             }
-            TokenKind::StrLit => {
-                // TODO: implement string literal parsing in new file.
-                todo!()
-            }
+            TokenKind::StrLit => parse_str_lit(first.value().raw_content(), first.span()),
             _ => Err(Spanned::new(
                 SyntaxError::UnexpectedToken {
                     message: format!(
