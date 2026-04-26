@@ -9,7 +9,7 @@ pub enum SyntaxError {
     InvalidFloatLiteral,
     FloatLiteralIsInfinite,
     UnclosedStringLiteral,
-    UnknownStringEscapeSequence { sequence: Box<str> },
+    InvalidStringEscapeSequence { sequence: Box<str> },
     UnexpectedEndOfString,
     UnclosedMultiLineComment,
 
@@ -36,8 +36,8 @@ impl fmt::Display for SyntaxError {
             InvalidFloatLiteral => write!(f, "float literal was malformed"),
             FloatLiteralIsInfinite => write!(f, "float literal would be infinity"),
             UnclosedStringLiteral => write!(f, "string literal was not closed"),
-            UnknownStringEscapeSequence { sequence } => {
-                write!(f, "unknown string escape sequence {:?}", sequence)
+            InvalidStringEscapeSequence { sequence } => {
+                write!(f, "invalid string escape sequence {:?}", sequence)
             }
             UnexpectedEndOfString => write!(f, "unexpected end of string encountered"),
             UnclosedMultiLineComment => write!(f, "multi-line comment was not closed"),

@@ -288,18 +288,20 @@ atom = LEFT_PAREN , expr , RIGHT_PAREN
 
 ### String Literals
 
-String literals are consumed from the `STR_LIT` lexer rule, but are handled in the parser layer to fully resolve their
-contents. This allows for implementing more advanced features like string interpolation in the future.
+String literals are consumed from the `STR_LIT` token, but are handled in the parser layer to fully
+resolve their contents. This allows for implementing more advanced features like string
+interpolation in the future.
 
-Specifically, the `str_lit` parser rule is a `STR_LIT` with the following transformations applied:
+Specifically, the `str_lit` parser rule is a `STR_LIT` token with the following transformations
+applied:
 
 - `\n` translates to an ASCII linefeed 0x0A.
 - `\r` translates to an ASCII carriage return 0x0D.
 - `\t` translates to an ASCII horizontal tab 0x09.
 - `\\` translates to a single backslash `\`.
 - `\"` translates to a literal double quote `"`.
-- `\u{XXXX}` where `XXXX` is a hexadecimal number translates to that codepoint in the UTF-8
+- `\uXXXX` where `XXXX` is a hexadecimal number translates to that codepoint in the UTF-8
   plane.
-- Any other sequence after a `\\` is deemed to be invalid.
+- Any other sequence after a `\` is deemed to be invalid.
 - The string contents are expected to be UTF-8 encoded sequences. Anything else is deemed
   garbage.
