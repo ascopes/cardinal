@@ -1,5 +1,4 @@
 use crate::ast::ident::{Ident, QualIdent, SimpleIdent};
-use crate::errors::SyntaxError;
 use crate::parser::base::{Parser, ParserResult};
 use crate::spans::{Span, Spanned};
 use crate::tokens::TokenKind;

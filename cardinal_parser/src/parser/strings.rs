@@ -1,7 +1,8 @@
 use crate::ast::expr::{Expr, StrLitExpr};
-use crate::errors::SyntaxError;
 use crate::parser::base::ParserResult;
+use crate::errors::SyntaxError;
 use crate::spans::{Span, Spanned};
+use std::str::CharIndices;
 
 /// We fully parse string literals here.
 ///
@@ -21,35 +22,19 @@ use crate::spans::{Span, Spanned};
 /// - The string contents are expected to be UTF-8 encoded sequences. Anything else is deemed
 ///   garbage.
 pub(super) fn parse_str_lit(raw: &str, span: Span) -> ParserResult<Expr> {
-    let inner = &raw[1..raw.len() - 1];
     // Throw away the open and close quotes.
-    let mut chars = inner.char_indices().peekable();
+    let inner = &raw[1..raw.len() - 1];
+    let mut chars = inner.char_indices();
     let mut parsed = String::with_capacity(inner.len());
 
-    while let Some((index, char)) = chars.next() {
-        match char {
-            '\\' => match chars.next() {
-                Some((_, '\\')) => parsed.push('\\'),
-                Some((_, 'n')) => parsed.push('n'),
-                Some((_, 'r')) => parsed.push('r'),
-                Some((_, 't')) => parsed.push('t'),
-                Some((_, 'u')) => unimplemented!("unicode escape handling is not implemented yet"),
-                Some((_, c)) => {
-                    return Err(Spanned::new(
-                        SyntaxError::UnknownStringEscapeSequence {
-                            sequence: format!("\\{}", c).into_boxed_str(),
-                        },
-                        Span::new(span.start() + index + 1, span.start() + index + 3),
-                    ));
-                }
-                None => {
-                    return Err(Spanned::new(
-                        SyntaxError::UnexpectedEndOfString,
-                        Span::new(span.start() + index + 1, span.start() + index + 3),
-                    ));
-                }
-            },
-            _ => parsed.push(char),
+    while let Some(pair) = chars.next() {
+        match pair {
+            // index + 1 as we skipped the open quote
+            (index, '\\') => {
+                let char = parse_str_lit_escape(&mut chars, span, index + 1)?;
+                parsed.push(char);
+            }
+            (_, char) => parsed.push(char),
         }
     }
 
@@ -59,4 +44,36 @@ pub(super) fn parse_str_lit(raw: &str, span: Span) -> ParserResult<Expr> {
         })),
         span,
     ))
+}
+
+fn parse_str_lit_escape(
+    chars: &mut CharIndices,
+    span: Span,
+    index: usize,
+) -> Result<char, Spanned<SyntaxError>> {
+    match chars.next() {
+        Some((_, '\\')) => Ok('\\'),
+        Some((_, '"')) => Ok('"'),
+        Some((_, 'n')) => Ok('\n'),
+        Some((_, 'r')) => Ok('\r'),
+        Some((_, 't')) => Ok('\t'),
+        Some((_, 'u')) => parse_str_lit_unicode_codepoint(chars, span),
+        Some((_, c)) => Err(Spanned::new(
+            SyntaxError::UnknownStringEscapeSequence {
+                sequence: format!("\\{}", c).into_boxed_str(),
+            },
+            Span::new(span.start() + index, span.start() + index + 2),
+        )),
+        None => Err(Spanned::new(
+            SyntaxError::UnexpectedEndOfString,
+            Span::new(span.start() + index, span.start() + index + 2),
+        )),
+    }
+}
+
+fn parse_str_lit_unicode_codepoint(
+    chars: &mut CharIndices,
+    span: Span,
+) -> Result<char, Spanned<SyntaxError>> {
+    unimplemented!("unicode codepoints not yet supported");
 }
