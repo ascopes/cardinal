@@ -55,8 +55,8 @@ pub(super) fn parse_str_lit(raw: &str, span: Span) -> ParserResult<Expr> {
 
     Ok(Spanned::new(
         Expr::Str(Box::new(StrLitExpr {
-            value: parsed.into_boxed_str()
+            value: parsed.into_boxed_str(),
         })),
-        span
+        span,
     ))
 }
