@@ -1,0 +1,15 @@
+[package]
+name = "cardinal_llvm"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[dependencies]
+inkwell = { workspace = true, features = ["llvm21-1"] }
+
+[dev-dependencies]
+test-case.workspace = true
+
+[lib]

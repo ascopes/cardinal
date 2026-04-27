@@ -1,11 +1,15 @@
 [workspace]
 members = [
+    "cardinal_llvm",
     "cardinal_parser",
 ]
 resolver = "3"
 
 [workspace.dependencies]
-test-case = "3.3.1"   # Parameterized tests
+# LLVM bindings
+inkwell = "0.9.0"
+# Parameterized tests
+test-case = "3.3.1"
 
 [workspace.package]
 authors = ["Ashley Scopes <73482956+ascopes@users.noreply.github.com>"]

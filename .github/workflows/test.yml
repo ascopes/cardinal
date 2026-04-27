@@ -11,6 +11,7 @@ env:
 
 jobs:
   build:
+    name: Build and run tests
     runs-on: ubuntu-24.04-arm
 
     steps:
@@ -25,3 +26,18 @@ jobs:
 
       - name: Run tests
         run: cargo test --verbose
+
+  validate:
+    name: Validation
+    runs-on: ubuntu-24.04-arm
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Validate shell scripts
+        uses: ludeeus/action-shellcheck@master
+        if: ${{ ! cancelled() }}
+        with:
+          check_together: 'yes'
+          scandir: ./scripts
