@@ -12,7 +12,7 @@ env:
 jobs:
   build:
     name: Build and run tests
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
@@ -41,7 +41,7 @@ jobs:
               .llvm-build/*-build/CMakeFiles \
               .llvm-build/*-build/utils
           du -h .llvm-build/ | sort -h | tail -n 30 | tac
-          
+
       - name: Cache LLVM Build
         if: steps.uncache-llvm.outputs.cache-hit != 'true'
         uses: actions/cache/save@v5

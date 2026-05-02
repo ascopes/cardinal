@@ -66,16 +66,17 @@ function build_llvm() {
     -DLLVM_INCLUDE_EXAMPLES=OFF
     -DLLVM_INCLUDE_TESTS=OFF
     -DLLVM_INCLUDE_TOOLS=ON
+    -DLLVM_INSTALL_TOOLCHAIN_ONLY=ON
+    -DLLVM_LINK_LLVM_DYLIB=ON
     -DLLVM_OPTIMIZED_TABLEGEN=ON
     -DLLVM_TARGETS_TO_BUILD="$(IFS=';'; echo "${targets[*]}")"
     -DLLVM_USE_LINKER=mold
     -DLLVM_USE_SPLIT_DWARF=ON
   )
 
-  export CMAKE_BUILD_PARALLEL_LEVEL=${parallelism}
   export CMAKE_BUILD_TYPE=${release_type}
 
-  run_or_abort cmake -B "${component_build_dir}" -G "Unix Makefiles" -S "${src_dir}/llvm" "${cmake_args[@]}"
+  run_or_abort cmake -B "${component_build_dir}" -G Ninja -S "${src_dir}/llvm" "${cmake_args[@]}"
 
   separator
 
