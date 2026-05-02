@@ -1,0 +1,6 @@
+FROM fedora:45
+RUN dnf makecache \
+    && dnf upgrade -y \
+    && dnf install -y bash binutils cmake curl coreutils clang clang-tools-extra glibc glibc-devel git grep jq make mold lld
+SHELL ["/usr/bin/env", "bash"]
+ENTRYPOINT ["/usr/bin/env", "bash", "-c"]

@@ -2,7 +2,7 @@ name: Test
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "**" ]
   pull_request:
     branches: [ "main" ]
 
@@ -12,11 +12,42 @@ env:
 jobs:
   build:
     name: Build and run tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
 
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+
+      - name: Determine LLVM Version
+        id: llvm-version
+        run: |-
+          echo "llvm_version=$(cat .llvm-version)" >> "${GITHUB_OUTPUT}"
+
+      - name: Load Cached LLVM Build
+        id: uncache-llvm
+        uses: actions/cache/restore@v5
+        with:
+          path: .llvm-build/
+          key: ${{ runner.os }}-${{ runner.arch }}-${{ steps.llvm-version.outputs.llvm_version }}-llvm
+
+      - name: Prepare LLVM
+        run: |-
+          source ./llvmc/prepare-env.sh
+          export | grep -E "^LLVM_" >> "${GITHUB_ENV}"
+          rm -Rf \
+              .llvm-build/*-src \
+              .llvm-build/*-build/tools \
+              .llvm-build/*-build/test \
+              .llvm-build/*-build/CMakeFiles \
+              .llvm-build/*-build/utils
+          du -h .llvm-build/ | sort -h | tail -n 30 | tac
+          
+      - name: Cache LLVM Build
+        if: steps.uncache-llvm.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: .llvm-build/
+          key: ${{ runner.os }}-${{ runner.arch }}-${{ steps.llvm-version.outputs.llvm_version }}-llvm
 
       - name: Validate Formatting
         run: cargo fmt --check --message-format=human
@@ -40,4 +71,4 @@ jobs:
         if: ${{ ! cancelled() }}
         with:
           check_together: 'yes'
-          scandir: ./scripts
+          scandir: .

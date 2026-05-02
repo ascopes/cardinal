@@ -5,6 +5,8 @@
 ### This script must be sourced rather than executed directly.
 ###
 
+_build_dir=./.llvm-build
+
 _log() {
   if [ -z "${NOCOLOR:-}" ] && [ -t 2 ]; then
     case "${1}" in
@@ -22,6 +24,12 @@ _log() {
 _command_exists() {
   command -v "${1}" > /dev/null 2>&1
 }
+
+# $0 isn't set consistently, grr.
+if ! [ -e ./llvmc/prepare-env.sh ]; then
+  _log FAIL "Run this script from the root of the repository."
+  return 1
+fi
 
 # It turns out it is a complete ballache to know if we were sourced or not
 # as there is no standard way of determining this. None of this is foolproof
@@ -59,28 +67,37 @@ if pwd | grep -qE '^/data/data/com.termux(/.*)?$'; then
     fi
   fi
 
-  _log INFO "Using libllvm v$(llvm-config --version) at $(llvm-config --prefix)"
   _llvm_envvar_version=$(llvm-config --version | grep -Eo '^[0-9]+\.[0-9]+' | sed 's/\.//g')
   _llvm_prefix_path=$(llvm-config --prefix)
-  export "LLVM_SYS_${_llvm_envvar_version}_PREFIX=${_llvm_prefix_path}"
-  return 0
-fi
 
-if ! _command_exists llvmenv; then
-  _log WARN "Installing llvmenv crate first..."
-  if ! cargo install llvmenv; then
-    _log FAIL "cargo install failed."
-    return 1
+  if [ -z "${_prepare_env_already_sourced:-}" ]; then
+    # Change the prompt so we know we are sourced in a modified environment.
+    PS1="llvm ($(llvm-config --version)) ${PS1}"; export PS1
+    export "LLVM_SYS_${_llvm_envvar_version}_PREFIX=${_llvm_prefix_path}"
+    _prepare_env_already_sourced=yes
+  fi
+
+else
+  _log INFO "Using source-built LLVM."
+
+  _llvm_version=$(cat .llvm-version)
+  _build_dir=$(pwd -P)/.llvm-build
+
+  cd llvmc || exit 1
+  ./llvmc.bash -C lld -C lldb -d "${_build_dir}" -v "llvmorg-${_llvm_version}"
+  _return_code=$?
+  cd .. || exit 1
+
+  if [ ${_return_code} -gt 0 ]; then
+    _log FAIL "Failed to run llvmc successfully."
+    return "${_return_code}"
+  fi
+
+  if [ -z "${_prepare_env_already_sourced:-}" ]; then
+    # Change the prompt so we know we are sourced in a modified environment.
+    PS1="llvm (${_llvm_version}) ${PS1}"; export PS1
+    export "LLVM_SYS_${_llvm_envvar_version}_PREFIX=${_build_dir}/llvmorg-${_llvm_version}-build"
+    export "PATH=${_build_dir}/llvmorg-${_llvm_version}-build/bin:${PATH}"
+    _prepare_env_already_sourced=yes
   fi
 fi
-
-if ! _command_exists llvmenv; then
-  _log ERROR "Cargo binary path is probably misconfigured."
-  _log ERROR "  Try adding ~/.cargo/bin to your \$PATH."
-  return 1
-fi
-
-_log INFO "Initializing llvmenv..."
-llvmenv init
-_log WARN "Nothing else is implemented just yet."
-return 1

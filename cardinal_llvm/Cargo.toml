@@ -7,7 +7,7 @@ repository.workspace = true
 version.workspace = true
 
 [dependencies]
-inkwell = { workspace = true, features = ["llvm21-1"] }
+inkwell = { workspace = true, features = ["llvm22-1"] }
 
 [dev-dependencies]
 test-case.workspace = true
