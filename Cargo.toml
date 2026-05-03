@@ -1,7 +1,6 @@
 [workspace]
 members = [
-    # TODO: enable
-    # "cardinal_llvm",
+    "cardinal_llvm",
     "cardinal_parser",
 ]
 resolver = "3"
