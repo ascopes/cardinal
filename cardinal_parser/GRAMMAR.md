@@ -188,7 +188,10 @@ _STR_ESC = _BACKSLASH , '"'
          | _BACKSLASH , 'n'
          | _BACKSLASH , 'r'
          | _BACKSLASH , 't'
+           (* treated as UTF-8 codepoint *)
          | _BACKSLASH , 'u' , _HEX_DIGIT , _HEX_DIGIT , _HEX_DIGIT , _HEX_DIGIT
+           (* treated as literal byte *)
+         | _BACKSLASH , 'x' , _HEX_DIGIT , _HEX_DIGIT
          ;
 _STR_CHR = ? any UTF-8 codepoint except 0xa linefeed \n and 0xd carriage return \r ? ;
 

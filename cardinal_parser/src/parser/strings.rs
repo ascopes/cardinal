@@ -19,6 +19,7 @@ use std::str::CharIndices;
 /// - `\"` translates to a literal double quote `"`.
 /// - `\uXXXX` where `XXXX` is a hexadecimal number translates to that codepoint in the UTF-8
 ///   plane.
+/// - `\xXX` where `XX` is a hexadecimal number translates to a literal byte with the same value.
 /// - The string contents are expected to be UTF-8 encoded sequences. Anything else is deemed
 ///   garbage.
 pub(super) fn parse_str_lit(raw: &str, span: Span) -> ParserResult<Expr> {
@@ -58,6 +59,7 @@ fn parse_str_lit_escape(
         Some((_, 'r')) => Ok('\r'),
         Some((_, 't')) => Ok('\t'),
         Some((_, 'u')) => parse_str_lit_unicode_codepoint(chars, span, index),
+        Some((_, 'x')) => parse_str_lit_byte(chars, span, index),
         Some((_, c)) => Err(Spanned::new(
             SyntaxError::InvalidStringEscapeSequence {
                 sequence: format!("\\{}", c).into_boxed_str(),
@@ -99,6 +101,38 @@ fn parse_str_lit_unicode_codepoint(
                     sequence: format!("\\u{}", raw_codepoint).into_boxed_str(),
                 },
                 Span::new(span.start() + index, span.start() + index + 6),
+            )
+        })
+}
+
+/// Parse the two hex digits after `\x` into a byte.
+fn parse_str_lit_byte(
+    chars: &mut CharIndices,
+    span: Span,
+    index: usize,
+) -> Result<char, Spanned<SyntaxError>> {
+    let raw_codepoint = chars.take(2).map(|(_, c)| c).collect::<String>();
+
+    // less than 2 characters is not valid.
+    // e.g. if we reached end of string early.
+    if raw_codepoint.len() != 2 {
+        return Err(Spanned::new(
+            SyntaxError::InvalidStringEscapeSequence {
+                sequence: format!("\\x{}", raw_codepoint).into_boxed_str(),
+            },
+            Span::new(span.start() + index, span.start() + index + 4),
+        ));
+    }
+
+    u8::from_str_radix(&raw_codepoint, 16)
+        .ok()
+        .map(|byte| byte as char)
+        .ok_or_else(|| {
+            Spanned::new(
+                SyntaxError::InvalidStringEscapeSequence {
+                    sequence: format!("\\x{}", raw_codepoint).into_boxed_str(),
+                },
+                Span::new(span.start() + index, span.start() + index + 4),
             )
         })
 }
