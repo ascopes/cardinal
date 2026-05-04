@@ -177,12 +177,20 @@ FLOAT_LIT  = _DEC_DIGIT+ , ( '.' , _DEC_DIGIT* )? , _FLOAT_EXP
 _FLOAT_EXP = ( 'e' | 'E' ) , ( '+' | '-' ) , _DEC_DIGIT+ ;
 
 
-(* strings - note that these are parsed fully during the later parsing phase *)
+(* strings - note that these designed are parsed fully during the later parsing
+   phase to allow for implementing string interpolation at a future point in time.
+   It is recommended that lexers handle only checking for close quotes, '\"', and
+   '\\'. Further parsing can be performed during AST transformation. *)
 
 STR_LIT  = '"' , ( _STR_ESC | _STR_CHR )* , '"' ;
-_STR_ESC = _BACKSLASH , ( '"' | _BACKSLASH ) ;
+_STR_ESC = _BACKSLASH , '"' 
+         | _BACKSLASH , _BACKSLASH
+         | _BACKSLASH , 'n'
+         | _BACKSLASH , 'r'
+         | _BACKSLASH , 't'
+         | _BACKSLASH , 'u' , _HEX_DIGIT , _HEX_DIGIT , _HEX_DIGIT , _HEX_DIGIT
+         ;
 _STR_CHR = ? any UTF-8 codepoint except 0xa linefeed \n and 0xd carriage return \r ? ;
-
 
 (* identifiers *)
 
@@ -282,26 +290,6 @@ atom = LEFT_PAREN , expr , RIGHT_PAREN
      | BOOL_LIT
      | INT_LIT
      | FLOAT_LIT
-     | str_lit  ? see below for notes ?
+     | STR_LIT
      ;
 ```
-
-### String Literals
-
-String literals are consumed from the `STR_LIT` token, but are handled in the parser layer to fully
-resolve their contents. This allows for implementing more advanced features like string
-interpolation in the future.
-
-Specifically, the `str_lit` parser rule is a `STR_LIT` token with the following transformations
-applied:
-
-- `\n` translates to an ASCII linefeed 0x0A.
-- `\r` translates to an ASCII carriage return 0x0D.
-- `\t` translates to an ASCII horizontal tab 0x09.
-- `\\` translates to a single backslash `\`.
-- `\"` translates to a literal double quote `"`.
-- `\uXXXX` where `XXXX` is a hexadecimal number translates to that codepoint in the UTF-8
-  plane.
-- Any other sequence after a `\` is deemed to be invalid.
-- The string contents are expected to be UTF-8 encoded sequences. Anything else is deemed
-  garbage.
