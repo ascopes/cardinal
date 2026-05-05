@@ -1,24 +1,20 @@
-use crate::ast::ident::{Ident, QualIdent, SimpleIdent};
+use crate::ast::ident::{Ident, QualIdent, UnqualIdent};
 use crate::parser::base::{Parser, ParserResult};
 use crate::spans::{Span, Spanned};
 use crate::tokens::TokenKind;
 
 impl<'src> Parser<'src> {
     /// ```text
-    /// ident = IDENT , ( NAMESPACE_SEP , IDENT )+
-    ///       | IDENT
-    ///       ;
+    /// ident      = unqual_ident | qual_ident ;
+    /// qual_ident = IDENT , ( NAMESPACE_SEP , IDENT )+ ;
     /// ```
     pub(super) fn parse_ident(&mut self) -> ParserResult<Ident> {
         let mut token = self.eat(TokenKind::Ident)?;
 
         if self.peek()?.value().kind() != TokenKind::NamespaceSep {
-            return Ok(Spanned::new(
-                Ident::Simple(Box::new(SimpleIdent {
-                    name: self.extract_boxed_str(token.value()),
-                })),
-                token.span(),
-            ));
+            return self
+                .parse_unqual_ident()
+                .map(|ident| Spanned::new(Ident::Unqual(Box::new(ident.value())), ident.span()));
         }
 
         let mut names = vec![Spanned::new(
@@ -41,5 +37,19 @@ impl<'src> Parser<'src> {
             Ident::Qual(Box::new(QualIdent { names })),
             span,
         ))
+    }
+
+    /// ```text
+    /// unqual_ident = IDENT ;
+    /// ```
+    pub(super) fn parse_unqual_ident(&mut self) -> ParserResult<UnqualIdent> {
+        self.eat(TokenKind::Ident).map(|token| {
+            Spanned::new(
+                UnqualIdent {
+                    name: self.extract_boxed_str(token.value()),
+                },
+                token.span(),
+            )
+        })
     }
 }

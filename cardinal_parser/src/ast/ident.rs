@@ -2,16 +2,18 @@ use crate::spans::Spanned;
 
 #[derive(Clone, Debug)]
 pub enum Ident {
-    Simple(Box<SimpleIdent>),
+    Unqual(Box<UnqualIdent>),
     Qual(Box<QualIdent>),
 }
 
 #[derive(Clone, Debug)]
-pub struct SimpleIdent {
-    pub name: Box<str>,
+pub struct QualIdent {
+    // TODO: do we need to span each box or is it useless for most
+    //  diagnostic purposes?
+    pub names: Vec<Spanned<Box<str>>>,
 }
 
 #[derive(Clone, Debug)]
-pub struct QualIdent {
-    pub names: Vec<Spanned<Box<str>>>,
+pub struct UnqualIdent {
+    pub name: Box<str>,
 }

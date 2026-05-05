@@ -206,11 +206,20 @@ The following grammar is implemented by a parser, consuming tokens emitted by th
 
 ### Identifiers
 
+Identifiers can be qualified or unqualified.
+
+A qualified identifier often represents some kind of logical namespace, such as
+`std::fs::create_directory`. An unqualified identifier represents something often
+(but not always) relatively scoped, like a variable or locally accessible function/type
+definition
+
 ```
-ident = IDENT , ( NAMESPACE_SEP , IDENT )+
-      | IDENT
-      ;
+qual_ident   = IDENT , ( NAMESPACE_SEP , IDENT )+ ;
+unqual_ident = IDENT ;
+ident        = qual_ident | unqual_ident ;
 ```
+
+Some places may only allow unqualified identifier
 
 ### Expressions
 
